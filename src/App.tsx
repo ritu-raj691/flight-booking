@@ -12,20 +12,24 @@ import { ITravelers } from "./Model/Travelers";
 import Home from "./Components/Home/Home";
 import Navbar from "./Common/Navbar/Navbar";
 import "./App.css";
+import AdminPanel from "./Components/AdminPanel/AdminPanel";
 const SearchList = lazy(() => import("./Components/SearchDeal/SearchList"));
 const FilterBar = lazy(() => import("./Components/FilterBar/FilterBar"));
 const TravelerDetail = lazy(
   () => import("./Components/TravelerDetails/TravelerDetail")
 );
 const Package = lazy(() => import("./Components/Package/Package"));
-const SignUp = lazy(() => import("./Components/SignuUp/SignUp"));
-const Login = lazy(() => import("./Components/Login/Login"));
+const Login = lazy(() => import("./Components/AdminPanel/Login/Login"));
+const AdminDepartureArrivalInfo = lazy(
+  () => import("./Components/AdminPanel/Inventory/DeptReturnInfo")
+);
+const Footer = lazy(() => import("./Components/Footer/Footer"));
 
 const App = () => {
-  const [isSignUpModalOpen, setIsSignUpModalOpen] = useState<boolean>(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
-  const [isFilterBarDisabled, setIsFilterBarDisabled] =
+  const [isAdminPanelVisible, setIsAdminPanelVisible] =
     useState<boolean>(false);
+  const [isTopNavBarEnabled, setIsTopNavBarEnabled] = useState<boolean>(false);
+  const [isFilterBarEnabled, setIsFilterBarEnabled] = useState<boolean>(false);
   const [selectedDate, setSelectedDate] = useState<Date | string>(
     new Date()?.toLocaleDateString("en-US", options as any)
   );
@@ -37,16 +41,19 @@ const App = () => {
 
   const TrackRouteChanges = () => {
     const location = useLocation();
-
     useEffect(() => {
+      setIsAdminPanelVisible(false);
+      if (location?.pathname?.includes("/admin")) {
+        setIsAdminPanelVisible(true);
+      }
       // Perform actions when route changes
       if (
-        location?.pathname?.includes("/package") ||
-        location?.pathname?.includes("/traveler-detail")
+        location?.pathname?.includes("/flights") ||
+        location?.pathname?.includes("/search-flight")
       ) {
-        setIsFilterBarDisabled(true);
+        setIsFilterBarEnabled(true);
       } else {
-        setIsFilterBarDisabled(false);
+        setIsFilterBarEnabled(false);
       }
     }, [location.pathname]);
 
@@ -68,69 +75,73 @@ const App = () => {
     <>
       <Router>
         <TrackRouteChanges />
-        <Button onClick={() => setIsLoginModalOpen(true)}>Login</Button>
-        <Button onClick={() => setIsSignUpModalOpen(true)}>SignUp</Button>
-        <Suspense fallback={<></>}>
-          <SignUp
-            isSignUpModalOpen={isSignUpModalOpen}
-            setIsSignUpModalOpen={setIsSignUpModalOpen}
-          />
-        </Suspense>
-        <Suspense fallback={<></>}>
-          <Login
-            isLoginModalOpen={isLoginModalOpen}
-            setIsLoginModalOpen={setIsLoginModalOpen}
-          />
-        </Suspense>
-        <Navbar />
-        <div className="container">
-          {!isFilterBarDisabled && (
-            <>
-              <Typography variant="h6" className="air-fares-label">
-                Search for Series AIR Fares
-              </Typography>
-              <Suspense fallback={<></>}>
-                <FilterBar
-                  newSelectedDate={currentSelectedDate}
-                  selectedPassengers={selectedPassengers}
+        {isAdminPanelVisible ? (
+          <AdminPanel />
+        ) : (
+          <>
+            <Navbar />
+            <div className="container">
+              {isFilterBarEnabled && (
+                <>
+                  <Typography variant="h6" className="air-fares-label">
+                    Search for Series AIR Fares
+                  </Typography>
+                  <Suspense fallback={<></>}>
+                    <FilterBar
+                      newSelectedDate={currentSelectedDate}
+                      selectedPassengers={selectedPassengers}
+                    />
+                  </Suspense>
+                </>
+              )}
+              <Routes>
+                <Route path="/flights" element={<Home />} />
+                <Route
+                  path="/search-flight"
+                  element={
+                    <Suspense fallback={<></>}>
+                      <SearchList
+                        allTravelers={allTravelers}
+                        selectedDate={selectedDate}
+                      />{" "}
+                    </Suspense>
+                  }
                 />
-              </Suspense>
-            </>
-          )}
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/flights" element={<Home />} />
-            <Route
-              path="/search-flight"
-              element={
-                <Suspense fallback={<></>}>
-                  <SearchList
-                    allTravelers={allTravelers}
-                    selectedDate={selectedDate}
-                  />{" "}
-                </Suspense>
-              }
-            />
-            <Route
-              path="/traveler-detail"
-              element={
-                <Suspense fallback={<></>}>
-                  <TravelerDetail />{" "}
-                </Suspense>
-              }
-            />
-          </Routes>
-        </div>
-        <Routes>
-          <Route
-            path="/package/:id"
-            element={
-              <Suspense fallback={<></>}>
-                <Package />
-              </Suspense>
-            }
-          />
-        </Routes>
+                <Route
+                  path="/traveler-detail"
+
+                  element={
+                    <Suspense fallback={<></>}>
+                      <TravelerDetail />{" "}
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/adminlogin"
+                  element={
+                    <Suspense fallback={<></>}>
+                      <Login />
+                    </Suspense>
+                  }
+                />
+                
+              </Routes>
+            </div>
+            <Routes>
+              <Route
+                path="/package/:id"
+                element={
+                  <Suspense fallback={<></>}>
+                    <Package />
+                  </Suspense>
+                }
+              />
+            </Routes>
+            <Suspense fallback={<></>}>
+              <Footer />
+            </Suspense>
+          </>
+        )}
       </Router>
     </>
   );
